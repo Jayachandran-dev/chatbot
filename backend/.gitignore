@@ -1,0 +1,6 @@
+data/
+static/widget/
+__pycache__/
+*.pyc
+.venv/
+.env
