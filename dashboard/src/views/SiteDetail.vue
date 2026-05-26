@@ -237,7 +237,7 @@
           />
         </v-card>
 
-        <v-dialog v-model="leadDlg" max-width="700">
+        <v-dialog v-model="leadDlg" max-width="760">
           <v-card v-if="selectedLead">
             <v-card-title>{{ selectedLead.name || 'Anonymous' }}</v-card-title>
             <v-card-subtitle>
@@ -247,11 +247,20 @@
               <div class="text-caption mb-2">Page: {{ selectedLead.page_url }}</div>
               <v-divider class="mb-3" />
               <h4>Conversations</h4>
-              <div v-for="c in leadConvs" :key="c.id" class="mb-3">
-                <div class="text-caption text-grey">{{ new Date(c.started_at).toLocaleString() }}</div>
-                <div v-for="(m,i) in c.messages" :key="i" class="pa-2 my-1 rounded"
-                     :class="m.role === 'user' ? 'bg-primary text-white' : 'bg-grey-lighten-3'">
-                  <strong>{{ m.role }}:</strong> {{ m.content }}
+              <div v-for="c in leadConvs" :key="c.id" class="mb-4">
+                <div class="conv-time">{{ formatDateTime(c.started_at) }}</div>
+                <div class="conv-thread">
+                  <div
+                    v-for="(m, i) in c.messages"
+                    :key="i"
+                    class="chat-row"
+                    :class="m.role === 'user' ? 'chat-row-user' : 'chat-row-bot'"
+                  >
+                    <div class="chat-bubble" :class="m.role === 'user' ? 'chat-bubble-user' : 'chat-bubble-bot'">
+                      <div class="chat-text">{{ m.content }}</div>
+                      <div class="chat-meta">{{ formatTime(m.created_at) }}</div>
+                    </div>
+                  </div>
                 </div>
               </div>
               <v-alert v-if="!leadConvs.length" type="info" variant="tonal">No conversations yet.</v-alert>
@@ -377,6 +386,21 @@ async function openLead(lead) {
   const { data } = await api.get(`/api/sites/${props.id}/leads/${lead.id}/conversations`);
   leadConvs.value = data;
 }
+
+function formatDateTime(v) {
+  if (!v) return '';
+  const d = new Date(v);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleString();
+}
+
+function formatTime(v) {
+  if (!v) return '';
+  const d = new Date(v);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
 function copy(t) { navigator.clipboard?.writeText(t); }
 
 onMounted(async () => {
@@ -395,5 +419,65 @@ watch(tab, (t) => {
   position: relative; height: 600px;
   background: linear-gradient(135deg, #e0e7ff 0%, #f3f4f6 100%);
   border-radius: 8px; overflow: hidden;
+}
+
+.conv-time {
+  text-align: center;
+  font-size: 12px;
+  color: #64748b;
+  margin-bottom: 8px;
+}
+
+.conv-thread {
+  border-radius: 10px;
+  padding: 12px;
+  background-color: #e7ddd3;
+  background-image:
+    radial-gradient(circle at 18px 18px, rgba(255, 255, 255, 0.38) 1.1px, transparent 1.2px),
+    radial-gradient(circle at 54px 54px, rgba(216, 188, 166, 0.20) 1.2px, transparent 1.2px);
+  background-size: 72px 72px;
+  border: 1px solid #e2e8f0;
+}
+
+.chat-row {
+  display: flex;
+  margin: 6px 0;
+}
+
+.chat-row-user {
+  justify-content: flex-end;
+}
+
+.chat-row-bot {
+  justify-content: flex-start;
+}
+
+.chat-bubble {
+  max-width: 86%;
+  border-radius: 10px;
+  padding: 8px 10px 6px;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.12);
+}
+
+.chat-bubble-user {
+  background: rgb(var(--v-theme-primary));
+  color: #ffffff;
+}
+
+.chat-bubble-bot {
+  background: #ffffff;
+  color: #111827;
+}
+
+.chat-text {
+  white-space: pre-wrap;
+  line-height: 1.45;
+}
+
+.chat-meta {
+  font-size: 11px;
+  color: #6b7280;
+  text-align: right;
+  margin-top: 2px;
 }
 </style>

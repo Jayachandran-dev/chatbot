@@ -13,15 +13,23 @@
           <img v-if="cfg.botAvatar" :src="cfg.botAvatar" alt=""/>
           <span v-else>{{ initial }}</span>
         </div>
-        <div class="zb-title">{{ cfg.botName || 'Assistant' }}</div>
+        <div class="zb-title-wrap">
+          <div class="zb-title">{{ cfg.botName || 'Assistant' }}</div>
+          <div class="zb-subtitle">
+            <span class="zb-status-dot"></span>
+            Online
+          </div>
+        </div>
         <div class="zb-close" @click="toggle">✕</div>
       </div>
 
       <div class="zb-body" ref="bodyRef">
-        <div v-for="(m, i) in messages" :key="i" class="zb-msg"
-             :class="m.role"
-             :style="m.role === 'user' ? { background: cfg.primaryColor } : null">
-          {{ m.content }}
+        <div v-for="(m, i) in messages" :key="i" class="zb-msg" :class="m.role">
+          <div class="zb-msg-text">{{ m.content }}</div>
+          <div class="zb-meta">
+            <span>{{ m.at || '' }}</span>
+            <span v-if="m.role === 'user'" class="zb-ticks">✓✓</span>
+          </div>
         </div>
         <div v-if="loading" class="zb-msg bot">
           <span class="zb-typing"><span></span><span></span><span></span></span>
@@ -84,7 +92,7 @@ const bodyRef = ref(null);
 
 const initial = computed(() => (cfg.botName || 'A').charAt(0).toUpperCase());
 const posClass = computed(() => cfg.position === 'bottom-left' ? 'zb-pos-bl' : 'zb-pos-br');
-const cssVars = computed(() => ({ '--zb-primary': cfg.primaryColor || '#4F46E5' }));
+const cssVars = computed(() => ({ '--zb-primary': cfg.primaryColor || '#00A884' }));
 const needsLead = computed(() => cfg.requireLead !== false && !leadId.value);
 const leadValid = computed(() => {
   const f = cfg.fields || {};
@@ -93,6 +101,10 @@ const leadValid = computed(() => {
   if (f.phone !== false && lead.phone.trim().length < 6) return false;
   return true;
 });
+
+function nowTime() {
+  return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
 
 async function api(path, opts = {}) {
   const r = await fetch(props.apiBase + path, {
@@ -108,7 +120,7 @@ async function loadConfig() {
     const data = await api(`/api/widget/config/${props.siteId}`);
     Object.assign(cfg, {
       welcomeMessage: 'Hello!',
-      primaryColor: '#4F46E5',
+      primaryColor: '#00A884',
       botName: 'Assistant',
       position: 'bottom-right',
       requireLead: true,
@@ -123,7 +135,7 @@ async function loadConfig() {
 function toggle() {
   open.value = !open.value;
   if (open.value && messages.value.length === 0 && cfg.welcomeMessage) {
-    messages.value.push({ role: 'bot', content: cfg.welcomeMessage });
+    messages.value.push({ role: 'bot', content: cfg.welcomeMessage, at: nowTime() });
   }
 }
 
@@ -144,6 +156,7 @@ async function submitLead() {
     messages.value.push({
       role: 'bot',
       content: `Thanks ${lead.name || ''}! How can I help you today?`,
+      at: nowTime(),
     });
     scrollDown();
   } catch (e) {
@@ -170,7 +183,7 @@ async function send() {
   const text = draft.value.trim();
   if (!text || loading.value) return;
   draft.value = '';
-  messages.value.push({ role: 'user', content: text });
+  messages.value.push({ role: 'user', content: text, at: nowTime() });
   scrollDown();
   loading.value = true;
   error.value = '';
@@ -188,7 +201,7 @@ async function send() {
       }),
     });
     conversationId.value = data.conversation_id;
-    messages.value.push({ role: 'bot', content: data.reply });
+    messages.value.push({ role: 'bot', content: data.reply, at: nowTime() });
     scrollDown();
   } catch (e) {
     error.value = 'Sorry, the assistant is unavailable right now.';

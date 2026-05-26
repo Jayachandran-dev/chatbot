@@ -96,10 +96,24 @@ def _build_prompt(bot_name: str, site_name: str, context: str, history: List[dic
 
 
 def _extractive_answer(context_chunks: List[str], user_msg: str, fallback: str) -> str:
-    """Fallback when no LLM available: return the best chunk, lightly framed."""
+    """Fallback when no LLM available: return the best chunk, lightly framed.
+    
+    Prefers knowledge base chunks over page snippets (which start with [Current page:]).
+    """
     if not context_chunks:
         return fallback
-    best = context_chunks[0].strip()
+    
+    # Find the first chunk that is NOT a page snippet
+    best = None
+    for chunk in context_chunks:
+        if not chunk.strip().startswith("[Current page:"):
+            best = chunk.strip()
+            break
+    
+    # Fallback to first chunk if all are page snippets
+    if best is None:
+        best = context_chunks[0].strip()
+    
     # Trim to ~3 sentences for readability
     import re
     sents = re.split(r"(?<=[.!?])\s+", best)
