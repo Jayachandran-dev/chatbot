@@ -37,6 +37,61 @@ docker compose up --build
 A seeded site **Zenfuture Technologies** is created automatically. Open it →
 go to **Install** → copy the snippet.
 
+## Deploy to production (HTTPS)
+
+This repository includes a production stack with automatic HTTPS via Caddy.
+
+### 1. Prepare server
+
+- Install Docker Engine + Docker Compose plugin.
+- Open inbound ports: **80** and **443** in your VM/firewall.
+- Point your domain DNS A record to the server IP.
+
+### 2. Configure environment
+
+```bash
+cp .env.production.example .env.production
+```
+
+Edit `.env.production` and set at least:
+
+- `DOMAIN` (example: `chat.yourdomain.com`)
+- `SECRET_KEY` (long random string)
+- `ADMIN_PASSWORD` (strong password)
+
+### 3. Start production stack
+
+```bash
+docker compose --env-file .env.production -f docker-compose.prod.yml up -d --build
+```
+
+### 4. Verify
+
+```bash
+docker compose -f docker-compose.prod.yml ps
+docker compose -f docker-compose.prod.yml logs -f caddy
+```
+
+Open:
+
+- `https://<your-domain>` for dashboard
+- `https://<your-domain>/api/widget/health` for backend health
+
+### 5. Embed widget on any website
+
+Use your production domain in snippet:
+
+```html
+<script src="https://<your-domain>/zenbot.js?site=YOUR_SITE_ID"></script>
+```
+
+### 6. Update deployment
+
+```bash
+git pull
+docker compose --env-file .env.production -f docker-compose.prod.yml up -d --build
+```
+
 ## Run locally (dev)
 
 ```powershell
@@ -46,6 +101,10 @@ python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 # (Optional) enable local LLM:
+# On Windows, use a compatible Python version and install Visual Studio Build Tools
+# with C++ and NMake before installing llama-cpp-python.
+# If you don't want the local model, skip this line; the app will still run with
+# extractive fallback answers.
 pip install llama-cpp-python==0.3.1
 # IMPORTANT on Windows / OneDrive: limit reload to app/ so .venv changes
 # don't cause uvicorn to restart in the middle of a request.

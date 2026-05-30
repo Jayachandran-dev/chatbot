@@ -1,0 +1,14 @@
+{$DOMAIN} {
+  encode gzip
+
+  # Backend routes
+  @backend path /api/* /zenbot.js /widget/* /docs /openapi.json /redoc
+  handle @backend {
+    reverse_proxy backend:8000
+  }
+
+  # Dashboard app
+  handle {
+    reverse_proxy dashboard:80
+  }
+}
