@@ -1,4 +1,4 @@
-# Zenbot — Embeddable AI Chatbot Platform
+# Chatbot — Embeddable AI Chatbot Platform
 
 A self-hosted, multi-tenant AI chatbot platform you can embed on **any website**
 (Zenfuture Technologies and beyond). 100% local — **no OpenAI / external APIs**.
